@@ -1,25 +1,14 @@
+from gym import Env, spaces
 import numpy as np
 import cv2
 from tkinter import Canvas, Frame
 
 from PIL import Image, ImageDraw
 
-class TKEnv(Frame):
-    def __init__(self, width: int, height: int) -> None:
-        Frame.__init__(self)
-        self.frame = Frame(self)
-        self.canvas = Canvas(self.frame, width=width, height=height, bg='white')
-
-    def draw(self, line):
-        return True
-
-    def get_pixels(self):
-        pass
-
-class SketchBoardEnv(object):
+class SketchBoardEnv(Env):
     """Definition of SketchBoard."""
 
-    def __init__(self, width: int, height: int, action_dim: int = 6):
+    def __init__(self, width: int, height: int, action_dim: int = 6, max_stroke_width: int = 10):
         """
         Constructor of SketchBoard.
 
@@ -30,17 +19,17 @@ class SketchBoardEnv(object):
 
             TODO:
             1. we have to determine the color mix mode (y or n).
-            2. we should replace tkenv with PIL.Image and PIL.ImageDraw
+            2. we should replace tkenv with PIL.Image and PIL.ImageDraw. [done]
         """
-        self.action_space = None
+        self.height, self.width = height, width
+        self.action_space = spaces.Box(low=np.zeros(action_dim, np.float), high=np.ones(action_dim, np.float), dtype=np.float)
         self.observation_space = None
         self.reward_range = None
-        self.sketch_board = np.ones((width, height), np.float)  # Image
-        self.tkenv = TKEnv(width, height)
+        self.max_stroke_width = max_stroke_width
+        self._prepare_env()
 
-    def _perpare_env(self):
-        """Prepare variables for sketch board."""
-        pass
+    def _prepare_env(self):
+        self.sketch_board = Image.fromarray(np.ones((self.height, self.width), np.uint8) * 255)  # Image
 
     def step(self, action: np.array) -> tuple:
         """
@@ -50,11 +39,13 @@ class SketchBoardEnv(object):
             action: the action vector
         """
         color, width, sx, sy, ex, ey = action
-        self.canvas
+        start_posx, start_posy = int(sx * self.width), int(sy * self.height)
+        end_posx, end_posy = int(ex * self.width), int(ey * self.height)
+        int_color = int(color * 255)
+        stroke_width = int(self.max_stroke_width * width)
+        ImageDraw.Draw(self.sketch_board).line(xy=[(start_posx, start_posy), (end_posx, end_posy)], fill=int_color, width=stroke_width)
 
-        raise NotImplementedError
-
-    def render(self):
+    def render(self) -> Image:
         """Render and return sketch board content."""
         return self.sketch_board
 
@@ -62,11 +53,13 @@ class SketchBoardEnv(object):
         """Close environment and clean up."""
         raise NotImplementedError
 
-    def seed(self):
-        """Generate seed for env."""
-        raise NotImplementedError
+    def reset(self):
+        """Reset whole env."""
+        self._prepare_env()
 
     def show(self):
         """Display sketchboard."""
-        cv2.imshow("SketchBoard", self.sketch_board)
-        cv2.waitKey(0)
+        frame_buffer = np.array(self.sketch_board, np.uint8)
+        # self.sketch_board.show()
+        cv2.imshow("SketchBoard", frame_buffer)
+        cv2.waitKey(100)
