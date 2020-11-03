@@ -1,9 +1,9 @@
 from gym import Env, spaces
 import numpy as np
 import cv2
-from tkinter import Canvas, Frame
-
 from PIL import Image, ImageDraw
+
+import time
 
 class SketchBoardEnv(Env):
     """Definition of SketchBoard."""
@@ -27,6 +27,7 @@ class SketchBoardEnv(Env):
         self.reward_range = None
         self.max_stroke_width = max_stroke_width
         self._prepare_env()
+        self.last_time = time.time()
 
     def _prepare_env(self):
         self.sketch_board = Image.fromarray(np.ones((self.height, self.width), np.uint8) * 255)  # Image
@@ -37,6 +38,12 @@ class SketchBoardEnv(Env):
 
         Args:
             action: the action vector
+
+        Return:
+            observation: observation vector
+            reward: total reward
+            done: game is done
+            info: other information
         """
         color, width, sx, sy, ex, ey = action
         start_posx, start_posy = int(sx * self.width), int(sy * self.height)
@@ -62,4 +69,8 @@ class SketchBoardEnv(Env):
         frame_buffer = np.array(self.sketch_board, np.uint8)
         # self.sketch_board.show()
         cv2.imshow("SketchBoard", frame_buffer)
-        cv2.waitKey(100)
+        cv2.waitKey(1)
+
+        fps = 1 / (time.time() - self.last_time)
+        print(fps)
+        self.last_time = time.time()
