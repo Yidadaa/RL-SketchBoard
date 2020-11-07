@@ -10,6 +10,5 @@ def test():
     skb.step(random_action)
     skb.show()
     sleep(0.03)
-  # skb.render().save('./2.jpg')
 
 test()
