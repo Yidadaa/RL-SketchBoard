@@ -19,7 +19,6 @@ class SketchBoardEnv(Env):
 
             TODO:
             1. we have to determine the color mix mode (y or n).
-            2. we should replace tkenv with PIL.Image and PIL.ImageDraw. [done]
         """
         self.height, self.width = height, width
         self.action_space = spaces.Box(low=np.zeros(action_dim, np.float), high=np.ones(action_dim, np.float), dtype=np.float)
