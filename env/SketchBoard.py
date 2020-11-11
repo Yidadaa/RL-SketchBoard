@@ -4,34 +4,40 @@ import cv2
 from PIL import Image, ImageDraw
 
 import time
+from typing import *
 
 class SketchBoardEnv(Env):
     """Definition of SketchBoard."""
 
-    def __init__(self, width: int, height: int, action_dim: int = 6, max_stroke_width: int = 10):
+    def __init__(self, target_image: np.array, action_dim: int = 6, max_stroke_width: int = 10):
         """
         Constructor of SketchBoard.
 
         Args:
-            width: the width of sketch board
-            height: the height of sketch board
+            target_image: the target image of the drawing task
             action_dim: the number of actions: color, width, start_x, start_y, end_x, end_y
 
             TODO:
             1. we have to determine the color mix mode (y or n).
         """
-        self.height, self.width = height, width
-        self.action_space = spaces.Box(low=np.zeros(action_dim, np.float), high=np.ones(action_dim, np.float), dtype=np.float)
+        assert isinstance(target_image, np.ndarray), \
+            'target image should be numpy.ndarray, but is: {}'.format(type(target_image))
+        self.target_image = target_image
+        self.height, self.width = self.target_image.shape
+        self.action_space = spaces.Box(low=np.zeros(action_dim, np.float), \
+            high=np.ones(action_dim, np.float), dtype=np.float)
         self.observation_space = None
         self.reward_range = None
         self.max_stroke_width = max_stroke_width
-        self._prepare_env()
         self.last_time = time.time()
+        # init environment
+        self._prepare_env()
 
     def _prepare_env(self):
-        self.sketch_board = Image.fromarray(np.ones((self.height, self.width), np.uint8) * 255)  # Image
+        self.sketch_board: Image.Image = Image.fromarray(
+            np.ones((self.height, self.width), np.uint8) * 255)
 
-    def step(self, action: np.array) -> tuple:
+    def step(self, action: np.array) -> Tuple[np.array, float, bool, dict]:
         """
         Take an action to the env.
 
@@ -50,6 +56,7 @@ class SketchBoardEnv(Env):
         int_color = int(color * 255)
         stroke_width = int(self.max_stroke_width * width)
         ImageDraw.Draw(self.sketch_board).line(xy=[(start_posx, start_posy), (end_posx, end_posy)], fill=int_color, width=stroke_width)
+        return self.get_observation(), self.get_reward(), False, {}
 
     def render(self) -> Image:
         """Render and return sketch board content."""
@@ -63,9 +70,21 @@ class SketchBoardEnv(Env):
         """Reset whole env."""
         self._prepare_env()
 
+    def get_observation(self) -> np.array:
+        """Get observation array."""
+        return self.get_buffer()
+
+    def get_buffer(self) -> np.array:
+        """Get image buffer."""
+        return np.array(self.sketch_board, np.uint8)
+
+    def get_reward(self) -> float:
+        """Get reward."""
+        return np.sum(np.abs(self.target_image - self.get_buffer()))
+
     def show(self):
         """Display sketchboard."""
-        frame_buffer = np.array(self.sketch_board, np.uint8)
+        frame_buffer = self.get_buffer()
         # self.sketch_board.show()
         cv2.imshow("SketchBoard", frame_buffer)
         cv2.waitKey(1)
