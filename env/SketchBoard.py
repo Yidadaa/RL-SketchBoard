@@ -33,7 +33,7 @@ class SketchBoardEnv(Env):
         self.height, self.width = self.target_image.shape
         self.action_space = spaces.Box(low=np.zeros(action_dim, np.float), \
             high=np.ones(action_dim, np.float), dtype=np.float)
-        self.observation_space = None
+        self.observation_space = None # TODO: determine obs shape
         self.reward_range = None
         self.max_stroke_width = max_stroke_width
         self.last_time = time.time()

@@ -9,7 +9,7 @@ import numpy as np
 class AppreciatorNet(nn.Module):
   """Defination of network to extract features from sketch."""
 
-  def __init__(self, w: int, h: int, c, feat_dim: int = 64, use_resnet: bool = False) -> None:
+  def __init__(self, w: int, h: int, c:int = 3, feat_dim: int = 64, use_resnet: bool = False) -> None:
     """Define network with width, height and channel of input image.
 
     Args:
